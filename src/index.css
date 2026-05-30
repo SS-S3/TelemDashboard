@@ -37,6 +37,55 @@ body {
   flex-direction: column;
 }
 
+/* Leaflet sizing helpers */
+.leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* 3D view containers */
+.threeD-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #1a1d24;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.threeD-map-underlay {
+  display: none;
+}
+
+.threeD-plot-overlay {
+  display: none;
+}
+
+/* 2x2 plots grid for 3D + 2D views */
+.threeD-plot-wrap {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 0;
+  background: #1a1d24;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.threeD-cell {
+  position: relative;
+  overflow: hidden;
+}
+
+.threeD-cell .plotly {
+  position: absolute;
+  inset: 0;
+}
+
+
+
 /* Typography */
 h1, h2, h3, h4 {
   font-weight: 600;
@@ -51,7 +100,7 @@ h1, h2, h3, h4 {
 /* Layout Grid */
 .dashboard-layout {
   display: grid;
-  grid-template-columns: 320px 1fr 320px;
+  grid-template-columns: 280px 1fr 420px;
   grid-template-rows: 70px 1fr 80px;
   grid-template-areas:
     "header header header"

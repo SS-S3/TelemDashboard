@@ -1,8 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { TelemetryRecord } from '../types';
+import ReactPlotly from 'react-plotly.js';
+
+const Plot = (ReactPlotly as any).default || ReactPlotly;
+
 
 // Fix leaflet icon paths
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -62,13 +66,38 @@ export const MapPanel: React.FC<Props> = ({ telemetry, selectedIndex, onSelectPo
     }
   };
 
+  const distancesKm = useMemo(() => {
+    const km: number[] = [0];
+    if (telemetry.length < 2) return km;
+    const R = 6371;
+    const toRad = (d: number) => (d * Math.PI) / 180;
+    for (let i = 1; i < telemetry.length; i++) {
+      const lat1 = telemetry[i - 1].Latitude;
+      const lon1 = telemetry[i - 1].Longitude;
+      const lat2 = telemetry[i].Latitude;
+      const lon2 = telemetry[i].Longitude;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      km.push(km[i - 1] + R * c);
+    }
+    return km;
+  }, [telemetry]);
+
+  const depthVsDistance = useMemo(() => {
+    return telemetry.map((t) => t.Depth);
+  }, [telemetry]);
+
   return (
-    <div className="map-panel">
-      <MapContainer 
-        center={[startPoint.Latitude, startPoint.Longitude]} 
-        zoom={13} 
-        style={{ height: '100%', width: '100%', zIndex: 1 }}
-      >
+    <div className="map-panel" style={{ height: '100%', width: '100%', display: 'grid', gridTemplateRows: '1fr 1fr' }}>
+      <div style={{ height: '100%', width: '100%' }}>
+        <MapContainer 
+          center={[startPoint.Latitude, startPoint.Longitude]} 
+          zoom={13} 
+          style={{ height: '100%', width: '100%', zIndex: 1 }}
+        >
+
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
@@ -103,7 +132,44 @@ export const MapPanel: React.FC<Props> = ({ telemetry, selectedIndex, onSelectPo
         )}
 
         <MapController telemetry={telemetry} selectedIndex={selectedIndex} />
-      </MapContainer>
+        </MapContainer>
+      </div>
+
+      <div style={{ height: '100%', width: '100%' }}>
+        <Plot
+          className="plotly"
+          data={[
+            {
+              type: 'scatter',
+              mode: 'lines+markers',
+              x: distancesKm,
+              y: depthVsDistance,
+              marker: {
+                size: telemetry.map((_, i) => (i === selectedIndex ? 7 : 4)),
+                color: telemetry.map((_, i) => (i === selectedIndex ? '#ef4444' : '#06b6d4')),
+              },
+              line: { width: 2, color: '#06b6d4' },
+              hoverinfo: 'none',
+            },
+          ]}
+          layout={{
+            autosize: true,
+            margin: { l: 50, r: 10, b: 30, t: 30 },
+            paper_bgcolor: 'transparent',
+            plot_bgcolor: 'transparent',
+            title: { text: 'Depth vs Distance Along Path', font: { color: '#94a3b8' } },
+            xaxis: { title: { text: 'Distance (km)' }, tickfont: { color: '#94a3b8' }, gridcolor: '#333' },
+            yaxis: { title: { text: 'Depth' }, tickfont: { color: '#94a3b8' }, gridcolor: '#333' },
+          }}
+          useResizeHandler={true}
+          style={{ width: '100%', height: '100%' }}
+          onClick={(evt: any) => {
+            const idx = evt?.points?.[0]?.pointNumber;
+            if (typeof idx === 'number') onSelectPoint(idx);
+          }}
+        />
+      </div>
     </div>
   );
 };
+

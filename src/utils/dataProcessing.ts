@@ -1,5 +1,5 @@
 import Papa from 'papaparse';
-import { differenceInSeconds, parseISO } from 'date-fns';
+import { parseISO } from 'date-fns';
 import type { TelemetryRecord, ImageTimestamp, MissionSummary, SyncedImage, DashboardData } from '../types';
 
 // Haversine formula to calculate distance between two lat/lon points in km
@@ -76,13 +76,16 @@ export async function fetchAndProcessData(): Promise<DashboardData> {
 
   const averageSpeed = telemetry.length > 0 ? totalSpeed / telemetry.length : 0;
   
+  // Mission duration (HH:MM:SS) based on elapsed time from first telemetry timestamp.
+  // Use millisecond math to avoid rounding quirks from date-fns helpers.
   let duration = '00:00:00';
   if (telemetry.length > 1) {
-    const start = parseISO(telemetry[0].Timestamp);
-    const end = parseISO(telemetry[telemetry.length - 1].Timestamp);
-    const diffSeconds = differenceInSeconds(end, start);
-    duration = formatDuration(diffSeconds);
+    const startMs = parseISO(telemetry[0].Timestamp).getTime();
+    const endMs = parseISO(telemetry[telemetry.length - 1].Timestamp).getTime();
+    const durationSeconds = Math.max(0, Math.floor((endMs - startMs) / 1000));
+    duration = formatDuration(durationSeconds);
   }
+
 
   // Calculate packet loss based on Sequence numbers (if available) or simply assume 1Hz and count missing seconds
   let packetsReceived = telemetry.length;
