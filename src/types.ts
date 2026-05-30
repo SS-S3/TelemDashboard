@@ -7,6 +7,9 @@ export interface TelemetryRecord {
   Battery: number;
   SignalStrength: number;
   Sequence: number;
+  CpuUsage?: number;
+  MemoryUsage?: number;
+  InternalTemp?: number;
 }
 
 export interface ImageTimestamp {

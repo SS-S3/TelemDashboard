@@ -1,6 +1,6 @@
 import Papa from 'papaparse';
 import { differenceInSeconds, parseISO } from 'date-fns';
-import { TelemetryRecord, ImageTimestamp, MissionSummary, SyncedImage, DashboardData } from '../types';
+import type { TelemetryRecord, ImageTimestamp, MissionSummary, SyncedImage, DashboardData } from '../types';
 
 // Haversine formula to calculate distance between two lat/lon points in km
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -23,19 +23,40 @@ function formatDuration(seconds: number): string {
 }
 
 export async function fetchAndProcessData(): Promise<DashboardData> {
+  const timestamp = Date.now();
   const [telemetryRes, imagesRes] = await Promise.all([
-    fetch('/telemetry.csv'),
-    fetch('/image_timestamps.csv')
+    fetch(`/telemetry.csv?t=${timestamp}`),
+    fetch(`/image_timestamps.csv?t=${timestamp}`)
   ]);
 
   const telemetryCsv = await telemetryRes.text();
   const imagesCsv = await imagesRes.text();
 
-  const parsedTelemetry = Papa.parse<TelemetryRecord>(telemetryCsv, { header: true, dynamicTyping: true, skipEmptyLines: true });
-  const parsedImages = Papa.parse<ImageTimestamp>(imagesCsv, { header: true, dynamicTyping: true, skipEmptyLines: true });
+  const parsedTelemetry = Papa.parse<any>(telemetryCsv, { header: true, dynamicTyping: true, skipEmptyLines: true });
+  const parsedImages = Papa.parse<any>(imagesCsv, { header: true, dynamicTyping: (field) => field !== 'Timestamp' && field !== 'ImageName', skipEmptyLines: true });
 
-  const telemetry = parsedTelemetry.data.filter(d => d.Timestamp && d.Latitude && d.Longitude);
-  const images = parsedImages.data.filter(d => d.ImageName && d.Timestamp);
+  const telemetry = parsedTelemetry.data
+    .map((d): TelemetryRecord => ({
+      Timestamp: String(d.timestamp || d.Timestamp || ''),
+      Latitude: Number(d.lat || d.Latitude),
+      Longitude: Number(d.lon || d.Longitude),
+      Depth: Number(d.altitude !== undefined ? d.altitude : d.Depth),
+      Speed: Number(d.speed || d.Speed),
+      Battery: Number(d.battery || d.Battery),
+      SignalStrength: Number(d.signal_strength || d.SignalStrength),
+      Sequence: Number(d.packet_id || d.Sequence),
+      CpuUsage: 30 + Math.random() * 20, // Mock CPU Usage
+      MemoryUsage: 40 + Math.random() * 10, // Mock Memory Usage
+      InternalTemp: 35 + Math.random() * 5, // Mock Temp
+    }))
+    .filter(d => Boolean(d.Timestamp && !isNaN(d.Latitude) && !isNaN(d.Longitude)));
+    
+  const images = parsedImages.data
+    .map((d): ImageTimestamp => ({
+      ImageName: String(d.image_name || d.ImageName || ''),
+      Timestamp: String(d.timestamp || d.Timestamp || '')
+    }))
+    .filter(d => Boolean(d.ImageName && d.Timestamp));
 
   // 1. Calculate Mission Summary
   let totalDistance = 0;

@@ -1,6 +1,9 @@
 import React, { useMemo } from 'react';
-import Plot from 'react-plotly.js';
-import { TelemetryRecord } from '../types';
+import ReactPlotly from 'react-plotly.js';
+import type { TelemetryRecord } from '../types';
+
+// Vite ESM workaround for react-plotly.js
+const Plot = (ReactPlotly as any).default || ReactPlotly;
 
 interface Props {
   telemetry: TelemetryRecord[];
@@ -52,16 +55,21 @@ export const ThreeDTrajectory: React.FC<Props> = React.memo(({ telemetry, select
           autosize: true,
           margin: { l: 0, r: 0, b: 0, t: 0 },
           paper_bgcolor: 'transparent',
+          dragmode: 'orbit',
           scene: {
-            xaxis: { title: 'Longitude', color: '#94a3b8', gridcolor: '#333' },
-            yaxis: { title: 'Latitude', color: '#94a3b8', gridcolor: '#333' },
-            zaxis: { title: 'Depth', color: '#94a3b8', gridcolor: '#333' },
+            aspectmode: 'cube',
+            xaxis: { title: { text: 'Longitude' }, color: '#94a3b8', gridcolor: '#333' },
+            yaxis: { title: { text: 'Latitude' }, color: '#94a3b8', gridcolor: '#333' },
+            zaxis: { title: { text: 'Depth' }, color: '#94a3b8', gridcolor: '#333' },
             bgcolor: '#1a1d24',
+            camera: {
+              projection: { type: 'perspective' }
+            }
           },
         }}
         useResizeHandler={true}
         style={{ width: '100%', height: '100%' }}
-        onClick={(data) => {
+        onClick={(data: any) => {
           if (data.points && data.points.length > 0) {
             onSelectPoint(data.points[0].pointNumber);
           }

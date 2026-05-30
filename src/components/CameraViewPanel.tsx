@@ -1,13 +1,18 @@
 import React from 'react';
-import { SyncedImage } from '../types';
+import type { SyncedImage } from '../types';
 import { Camera } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { format, isValid, parseISO } from 'date-fns';
 
 interface Props {
   syncedImage: SyncedImage | null;
 }
 
 export const CameraViewPanel: React.FC<Props> = ({ syncedImage }) => {
+  const timestamp = syncedImage ? parseISO(syncedImage.ImageTimestamp) : null;
+  const timestampLabel = timestamp && isValid(timestamp)
+    ? format(timestamp, 'HH:mm:ss')
+    : syncedImage?.ImageTimestamp ?? '--:--:--';
+
   return (
     <div className="panel" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
       <div className="panel-header">
@@ -24,7 +29,7 @@ export const CameraViewPanel: React.FC<Props> = ({ syncedImage }) => {
           />
           <div className="camera-overlay">
             <span>{syncedImage.ImageName}</span>
-            <span>{format(parseISO(syncedImage.ImageTimestamp), 'HH:mm:ss')}</span>
+            <span>{timestampLabel}</span>
           </div>
         </div>
       ) : (

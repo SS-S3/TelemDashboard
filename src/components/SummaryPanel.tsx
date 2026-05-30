@@ -1,5 +1,5 @@
 import React from 'react';
-import { MissionSummary } from '../types';
+import type { MissionSummary } from '../types';
 import { Activity, Clock, Navigation, Zap, Wifi } from 'lucide-react';
 
 interface Props {

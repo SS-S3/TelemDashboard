@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { DashboardData, SyncedImage } from './types';
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import type { DashboardData } from './types';
 import { fetchAndProcessData } from './utils/dataProcessing';
 import { SummaryPanel } from './components/SummaryPanel';
 import { MapPanel } from './components/MapPanel';
@@ -7,7 +7,7 @@ import { CurrentStatusPanel } from './components/CurrentStatusPanel';
 import { CameraViewPanel } from './components/CameraViewPanel';
 import { ThreeDTrajectory } from './components/ThreeDTrajectory';
 import { PlaybackController } from './components/PlaybackController';
-import { Activity } from 'lucide-react';
+import { Activity, RefreshCw } from 'lucide-react';
 
 function App() {
   const [data, setData] = useState<DashboardData | null>(null);
@@ -17,7 +17,9 @@ function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [viewMode, setViewMode] = useState<'2D' | '3D'>('2D');
 
-  useEffect(() => {
+  const reloadData = useCallback(() => {
+    setLoading(true);
+    setError(null);
     fetchAndProcessData()
       .then((processedData) => {
         setData(processedData);
@@ -32,6 +34,10 @@ function App() {
         setLoading(false);
       });
   }, []);
+
+  useEffect(() => {
+    reloadData();
+  }, [reloadData]);
 
   const handleSelectPoint = useCallback((index: number | ((prev: number | null) => number | null)) => {
     setSelectedIndex(index);
@@ -71,7 +77,24 @@ function App() {
           <Activity size={28} className="text-cyan" />
           GCS Telemetry Dashboard <span style={{ fontSize: '0.8rem', color: 'var(--accent-green)', marginLeft: '12px', border: '1px solid var(--accent-green)', padding: '2px 8px', borderRadius: '12px' }}>V2</span>
         </h1>
-        <div className="header-status">
+        <div className="header-status" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <button 
+            onClick={reloadData} 
+            className="reload-btn"
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px',
+              padding: '6px 12px',
+              background: '#334155',
+              border: 'none',
+              borderRadius: '6px',
+              color: '#e2e8f0',
+              cursor: 'pointer'
+            }}
+          >
+            <RefreshCw size={16} /> Reload CSV
+          </button>
           <div className="status-badge">
             <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: data.summary.communicationStatus === 'GOOD' ? 'var(--accent-green)' : 'var(--accent-danger)' }} />
             {data.summary.communicationStatus === 'GOOD' ? 'SYSTEM NOMINAL' : 'SYSTEM DEGRADED'}

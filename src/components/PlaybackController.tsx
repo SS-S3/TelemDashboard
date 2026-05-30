@@ -1,12 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import { Play, Pause, SkipBack, SkipForward } from 'lucide-react';
-import { TelemetryRecord } from '../types';
-import { format, parseISO } from 'date-fns';
+import type { TelemetryRecord } from '../types';
+import { format, isValid, parseISO } from 'date-fns';
 
 interface Props {
   telemetry: TelemetryRecord[];
   selectedIndex: number | null;
-  onSelectPoint: (index: number) => void;
+  onSelectPoint: (index: number | ((prev: number | null) => number | null)) => void;
   isPlaying: boolean;
   setIsPlaying: (playing: boolean) => void;
 }
@@ -15,6 +15,15 @@ export const PlaybackController: React.FC<Props> = React.memo(({ telemetry, sele
   const currentIndex = selectedIndex ?? 0;
   const maxIndex = Math.max(0, telemetry.length - 1);
   const timerRef = useRef<number | null>(null);
+
+  const formatTimestamp = (timestamp?: string) => {
+    if (!timestamp) {
+      return '--:--:--';
+    }
+
+    const parsedTimestamp = parseISO(timestamp);
+    return isValid(parsedTimestamp) ? format(parsedTimestamp, 'HH:mm:ss') : timestamp;
+  };
 
   useEffect(() => {
     if (isPlaying) {
@@ -52,7 +61,7 @@ export const PlaybackController: React.FC<Props> = React.memo(({ telemetry, sele
   };
 
   const currentRecord = telemetry[currentIndex];
-  const timeFormatted = currentRecord ? format(parseISO(currentRecord.Timestamp), 'HH:mm:ss') : '--:--:--';
+  const timeFormatted = currentRecord ? formatTimestamp(currentRecord.Timestamp) : '--:--:--';
 
   return (
     <div className="playback-panel">
@@ -72,7 +81,7 @@ export const PlaybackController: React.FC<Props> = React.memo(({ telemetry, sele
 
       <div className="time-slider-container">
         <span className="time-display" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          {telemetry.length > 0 ? format(parseISO(telemetry[0].Timestamp), 'HH:mm:ss') : '--:--:--'}
+          {telemetry.length > 0 ? formatTimestamp(telemetry[0].Timestamp) : '--:--:--'}
         </span>
         
         <input 
