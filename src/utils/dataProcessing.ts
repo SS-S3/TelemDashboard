@@ -1,6 +1,10 @@
 import Papa from 'papaparse';
-import { parseISO } from 'date-fns';
 import type { TelemetryRecord, ImageTimestamp, MissionSummary, SyncedImage, DashboardData } from '../types';
+
+function toMs(timestamp: string): number | null {
+  const ms = new Date(timestamp).getTime();
+  return Number.isFinite(ms) ? ms : null;
+}
 
 // Haversine formula to calculate distance between two lat/lon points in km
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -78,12 +82,16 @@ export async function fetchAndProcessData(): Promise<DashboardData> {
   
   // Mission duration (HH:MM:SS) based on elapsed time from first telemetry timestamp.
   // Use millisecond math to avoid rounding quirks from date-fns helpers.
+  // Guard against invalid timestamps to avoid NA:NA:NA.
   let duration = '00:00:00';
   if (telemetry.length > 1) {
-    const startMs = parseISO(telemetry[0].Timestamp).getTime();
-    const endMs = parseISO(telemetry[telemetry.length - 1].Timestamp).getTime();
-    const durationSeconds = Math.max(0, Math.floor((endMs - startMs) / 1000));
-    duration = formatDuration(durationSeconds);
+    const startMs = toMs(telemetry[0].Timestamp);
+    const endMs = toMs(telemetry[telemetry.length - 1].Timestamp);
+
+    if (startMs !== null && endMs !== null && endMs >= startMs) {
+      const durationSeconds = Math.floor((endMs - startMs) / 1000);
+      duration = formatDuration(Math.max(0, durationSeconds));
+    }
   }
 
 
@@ -115,14 +123,16 @@ export async function fetchAndProcessData(): Promise<DashboardData> {
 
   // 2. Synchronize Images with Telemetry
   const syncedImages: SyncedImage[] = images.map(img => {
-    const imgTime = parseISO(img.Timestamp).getTime();
-    
+    const imgTime = toMs(img.Timestamp);
+
     // Find nearest telemetry record
     let nearestRecord = telemetry[0];
     let minDiff = Infinity;
-    
+
     for (const record of telemetry) {
-      const recordTime = parseISO(record.Timestamp).getTime();
+      const recordTime = toMs(record.Timestamp);
+      if (imgTime === null || recordTime === null) continue;
+
       const diff = Math.abs(recordTime - imgTime);
       if (diff < minDiff) {
         minDiff = diff;

@@ -1,4 +1,4 @@
-# Telemetry Dashboard
+# Telemetry Dashboard (Codebase)
 
 <div align="center">
   <h1>Ground Station Telemetry Dashboard</h1>
@@ -118,7 +118,9 @@ The summary card is derived from the telemetry array rather than being stored se
 
 Distance is computed with the Haversine formula, which estimates the great-circle distance between successive latitude and longitude pairs on Earth. Each point is compared to the previous point and the distances are accumulated into a total mission distance.
 
-Duration is computed by parsing the first and last timestamps with `parseISO`, then using `differenceInSeconds`. The display is formatted as `HH:MM:SS`.
+Duration is computed by taking the first and last telemetry timestamps from `telemetry.csv`, subtracting them in **milliseconds**, then converting to **whole seconds** and formatting as `HH:MM:SS`.
+
+This avoids rounding/parsing edge-cases and uses consistent timestamp parsing across the dashboard.
 
 Speed statistics are straightforward:
 
@@ -133,9 +135,13 @@ Communication health is inferred from sequence continuity. The code compares the
 
 ### 3. Camera synchronization
 
-The image map in `image_timestamps.csv` is loaded separately from telemetry. For every image timestamp, the loader searches the telemetry array for the nearest timestamp in time. The image is then associated with that telemetry record and stored as a `SyncedImage`.
+The image map in `image_timestamps.csv` is loaded separately from telemetry. For every image timestamp, the loader searches the telemetry array for the nearest timestamp in time and associates the image with that nearest telemetry record (`SyncedImage`).
 
-This approach is intentionally robust because it does not require exact timestamp matches. As long as the image and telemetry timelines are close, the UI can still present the most relevant camera frame for the current selection.
+To prevent timestamp parsing mismatches across the app, all timestamp parsing for both telemetry and camera timestamps uses `new Date(timestamp).getTime()` with `NaN` guards. This ensures:
+
+- Mission duration stays valid.
+- Camera frames reliably sync to the currently selected telemetry point.
+- The camera timestamp overlay renders consistently.
 
 ### 4. Selection model
 
@@ -350,12 +356,10 @@ npm run lint
 | ----- | ---------------------------------------- | ------------------------------------------------------------------------------ |
 | Core  | Telemetry parsing and normalization      | [src/utils/dataProcessing.ts](src/utils/dataProcessing.ts)                     |
 | Core  | Mission metrics and communication health | [src/utils/dataProcessing.ts](src/utils/dataProcessing.ts)                     |
-| Core  | Ground station dashboard orchestration   | [src/App.tsx](src/App.tsx) and [src/components/](src/components)               |
+| Core  | Dashboard orchestration                  | [src/App.tsx](src/App.tsx) and [src/components/](src/components)               |
 | Bonus | 3D trajectory visualization              | [src/components/ThreeDTrajectory.tsx](src/components/ThreeDTrajectory.tsx)     |
 | Bonus | Playback and time filtering              | [src/components/PlaybackController.tsx](src/components/PlaybackController.tsx) |
 
 ## Summary
 
 This repository implements a complete telemetry visualization workflow: data is fetched from CSV files, transformed into a mission model, and projected into multiple coordinated views for operational analysis. The architecture is intentionally simple at the data layer and strongly separated at the UI layer, which keeps the behavior easy to reason about and easy to extend.
-
-

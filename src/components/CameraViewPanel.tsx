@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { SyncedImage } from '../types';
 import { Camera } from 'lucide-react';
-import { format, isValid, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 
 interface Props {
   syncedImage: SyncedImage | null;
@@ -66,10 +66,13 @@ export const CameraViewPanel: React.FC<Props> = ({ syncedImage }) => {
 
   }, [target]);
 
-  const timestamp = syncedImage ? parseISO(syncedImage.ImageTimestamp) : null;
-  const timestampLabel = timestamp && isValid(timestamp)
-    ? format(timestamp, 'HH:mm:ss')
-    : syncedImage?.ImageTimestamp ?? '--:--:--';
+  const timestampLabel = (() => {
+    if (!syncedImage) return '--:--:--';
+    const d = new Date(syncedImage.ImageTimestamp);
+    const ms = d.getTime();
+    if (!Number.isFinite(ms)) return syncedImage.ImageTimestamp ?? '--:--:--';
+    return format(d, 'HH:mm:ss');
+  })();
 
   const currentImageName = syncedImage ? (displayed?.name ?? syncedImage.ImageName) : displayed?.name;
   const currentSrc = displayed?.src ?? (syncedImage ? `/frames/${syncedImage.ImageName}` : '');

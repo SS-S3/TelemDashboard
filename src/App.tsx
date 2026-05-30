@@ -50,7 +50,21 @@ function App() {
   
   const currentSyncedImage = useMemo(() => {
     if (!data || !currentTelemetry) return null;
-    return data.syncedImages.find(si => si.telemetry === currentTelemetry) || null;
+
+    const currentMs = new Date(currentTelemetry.Timestamp).getTime();
+    if (!Number.isFinite(currentMs)) return null;
+
+    let best: { item: (typeof data.syncedImages)[number]; diff: number } | null = null;
+
+    for (const si of data.syncedImages) {
+      const t = new Date(si.telemetry.Timestamp).getTime();
+      if (!Number.isFinite(t)) continue;
+
+      const diff = Math.abs(t - currentMs);
+      if (!best || diff < best.diff) best = { item: si, diff };
+    }
+
+    return best?.item ?? null;
   }, [data, currentTelemetry]);
 
   if (loading) {
