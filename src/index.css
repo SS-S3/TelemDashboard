@@ -335,6 +335,40 @@ h1, h2, h3, h4 {
 }
 
 /* Camera View */
+.realtime-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.6);
+}
+
+.realtime-dot[data-status='LIVE'] {
+  background: var(--accent-green);
+}
+
+.realtime-dot[data-status='OFFLINE'] {
+  background: var(--accent-danger);
+}
+
+.realtime-grid {
+  grid-template-columns: 1fr 1fr;
+}
+
+
+dual-camera-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto;
+  gap: 12px;
+}
+
+/* Make each stacked camera larger */
+.camera-container.dual {
+  aspect-ratio: auto;
+  min-height: 260px;
+}
+
+
 .camera-container {
   width: 100%;
   aspect-ratio: 4/3;
@@ -344,6 +378,22 @@ h1, h2, h3, h4 {
   position: relative;
   border: 1px solid var(--border-color);
 }
+
+.camera-container.dual {
+  aspect-ratio: 16/10;
+}
+
+.camera-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+
 
 .camera-image {
   width: 100%;
@@ -402,3 +452,4 @@ h1, h2, h3, h4 {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
 }
+

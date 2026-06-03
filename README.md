@@ -22,8 +22,6 @@ This application ingests mission telemetry CSV data and image timestamp mappings
 
 The codebase is designed as a small but complete data-visualization pipeline: CSV files are fetched from `public/`, normalized into typed objects, derived metrics are computed, and the resulting state is distributed into focused UI panels.
 
-Video Demo : https://drive.google.com/file/d/15hy6zUs5xGlsEUBJJCHcBZ-GeepkozcZ/view?usp=sharing 
-
 ## Key Features
 
 - Mission summary with total distance, average speed, max speed, and duration.

@@ -1,0 +1,14 @@
+{
+  "name": "telemetry-dashboard-udp-server",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "main": "udpFrameServer.js",
+  "scripts": {
+    "dev": "node udpFrameServer.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
+
